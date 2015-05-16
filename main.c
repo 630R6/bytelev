@@ -137,7 +137,9 @@ int size_t_dec(size_t * const res) { return size_t_sub_aug(res, 1); }
 
 /*  Getting the size of a file
 
-    The following function appears to be inefficient but platform-independent.
+    The following function appears to be either
+      - inefficient (ifdef SAFE_GET_FILE_SIZE) or
+      - possibly unsafe.
     ("A binary stream need not meaningfully support fseek calls with a whence
     value of SEEK_END.")
     Future releases may improve the following function.
@@ -152,6 +154,8 @@ int get_file_size(char const * const file_path, size_t * const file_size) {
   if (!file) {
     return 1;
   }
+
+#ifdef SAFE_GET_FILE_SIZE
   while ( EOF != fgetc(file) ) {
     ret = size_t_inc(&file_size_);
     if (ret) {
@@ -160,11 +164,32 @@ int get_file_size(char const * const file_path, size_t * const file_size) {
     }
   }
   ret = feof(file);
-  fclose(file);
   if (!ret) {
+    fclose(file);
     return 1;
   }
+#else
+  {
+    long int long_int = 0;
 
+    ret = fseek(file, 0, SEEK_END);
+    if (ret) {
+      fclose(file);
+      return 1;
+    }
+
+    long_int = ftell(file);
+    if (long_int < 0 ||
+        long_int > SIZE_MAX)
+    {
+      fclose(file);
+      return 1;
+    }
+    file_size_ = long_int;
+  }
+#endif
+
+  fclose(file);
   *file_size = file_size_;
   return 0;
 }
