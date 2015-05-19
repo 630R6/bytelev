@@ -81,6 +81,23 @@ int size_t_mod(size_t * const res,
   return 0;
 }
 
+int size_t_ceil_div(size_t * const res,
+                    size_t const op1,
+                    size_t const op2) {
+  size_t res_ = 0;
+  if (op2 == 0) {
+    return 1;
+  }
+  res_ = op1 / op2;
+  if (op1 % op2) {
+    assert(op1 > 0 && op2 > 1); /* obviously */
+    assert(op1 > res_); /* This follows from the preceding assertion. */
+    ++res_; /* This is safe due to the preceding assertion. */
+  }
+  *res = res_;
+  return 0;
+}
+
 int size_t_from_string(size_t * const res, char const * const string) {
   char const * string_ = string;
   int all_zero = 1;
